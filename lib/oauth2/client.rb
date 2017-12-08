@@ -34,6 +34,7 @@ module OAuth2
       ssl = opts.delete(:ssl)
       @options = {:authorize_url    => '/oauth/authorize',
                   :token_url        => '/oauth/token',
+                  :token_info_url   => '/oauth/token/info',
                   :token_method     => :post,
                   :auth_scheme      => :request_body,
                   :connection_opts  => {},
@@ -77,6 +78,10 @@ module OAuth2
     # @param [Hash] params additional query parameters
     def token_url(params = nil)
       connection.build_url(options[:token_url], params).to_s
+    end
+
+    def token_info_url(params = nil)
+      connection.build_url(options[:token_info_url], params).to_s
     end
 
     # Makes a request relative to the specified site root.
@@ -151,6 +156,20 @@ module OAuth2
       access_token_class.from_hash(self, response.parsed.merge(access_token_opts))
     end
 
+    def get_token_info(token)
+      opts = {:raise_errors => options[:raise_errors], :parse => params.delete(:parse)}
+      opts[:headers] = {
+          "Authorization" => "Bearer #{token}"
+      }
+
+      response = request(:get, token_info_url, opts)
+      if options[:raise_errors] && !(response.parsed.is_a?(Hash))
+        error = Error.new(response)
+        raise(error)
+      end
+      AccessToken.from_token_and_info(self, token, response.parsed)
+    end
+
     # The Authorization Code strategy
     #
     # @see http://tools.ietf.org/html/draft-ietf-oauth-v2-15#section-4.1
@@ -181,6 +200,10 @@ module OAuth2
 
     def assertion
       @assertion ||= OAuth2::Strategy::Assertion.new(self)
+    end
+
+    def verify_token
+      @verify_token ||= OAuth2::Strategy::VerifyToken.new(self)
     end
 
     # The redirect_uri parameters, if configured

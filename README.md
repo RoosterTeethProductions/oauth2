@@ -89,6 +89,7 @@ token = client.password.get_token('username', 'password')
 token = client.client_credentials.get_token
 
 token = client.assertion.get_token(assertion_params)
+token = client.verify_token.verify_token(token_string)
 ```
 
 If you want to specify additional headers to be sent out with the

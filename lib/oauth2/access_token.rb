@@ -22,6 +22,14 @@ module OAuth2
       def from_kvform(client, kvform)
         from_hash(client, Rack::Utils.parse_query(kvform))
       end
+
+      def from_token_and_info(client, token, info)
+        hash = {
+            access_token: token,
+            expires_in: info["expires_in_seconds"]
+        }
+        from_hash(client, hash)
+      end
     end
 
     # Initalize an AccessToken
